@@ -19,13 +19,17 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "LocalBusiness", "name": "KRAKSTRANS Wiesław Krakowiak", "url": "https://kris20032.github.io/krakstrans-wieslaw-krakowiak/", "telephone": "+48600439938", "image": "https://kris20032.github.io/krakstrans-wieslaw-krakowiak/img/og.jpg", "areaServed": "Koluszki", "sameAs": ["https://www.google.com/maps/place/KRAKSTRANS+Wies%C5%82aw+Krakowiak/@51.7343252,19.8242022,17z/data=!4m6!3m5!1s0x471bd55238cc8db5:0x772ce929f6acebc6!8m2!3d51.7343252!4d19.8242022!16s%2Fg%2F11pw53kmmr"]}</script>
+<script>(function(){var d=document.documentElement;try{if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)d.classList.add('kr-anim');}catch(e){}setTimeout(function(){if(!d.classList.contains('kr-ok'))d.classList.remove('kr-anim');},3500);})();</script>
+<script>(function(){try{var d=document.documentElement,q=/[?&]intro/.test(location.search);if(!q&&window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;if(!q&&sessionStorage.getItem('krak_intro'))return;sessionStorage.setItem('krak_intro','1');d.classList.add('intro-on');setTimeout(function(){d.classList.remove('intro-on','intro-gra','intro-out');d.classList.add('hero-go');},4600);}catch(e){}})();</script>
+<link rel="preload" as="image" href="img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gloock&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=20261105">
+<link rel="stylesheet" href="assets/styles.css?v=20261110">
 <meta name="nb-deploy" content="58d725f1316c">
 </head>
 <body>
+<div class="wejscie" aria-hidden="true"><span class="wejscie-tlo"></span><img class="wejscie-logo" src="img/logo.png" alt="" width="1010" height="164"><span class="wejscie-line"><i></i></span><span class="wejscie-meta">Transport wywrotką · Koluszki</span></div>
 
 <header class="nav">
   <div class="nav-inner">
@@ -33,7 +37,7 @@
     <button class="nav-toggle" aria-label="Menu" aria-controls="menu"><span></span><span></span></button>
     <a class="nav-phone" href="tel:+48600439938">+48 600 439 938 <span class="arr">→</span></a>
   </div>
-  <nav class="nav-links" id="menu" aria-label="Menu główne">
+  <nav class="nav-links" id="menu" aria-label="Menu główne" data-lenis-prevent>
     <div class="menu-inner">
       <div class="menu-top"><span><img class="brand-logo" src="img/logo.png" alt="KRAKSTRANS Wiesław Krakowiak" width="1010" height="164" decoding="async"></span><span></span><a class="btn" href="tel:+48600439938">+48 600 439 938</a></div>
       <div class="menu-cols">
@@ -56,6 +60,27 @@
     </div>
   </nav>
 </header>
+<script>(function(){var d=document.documentElement;if(!d.classList.contains('intro-on'))return;
+var wyszlo=false,koniec=false,t0=Date.now();
+function heroGotowe(){var im=document.querySelector('.banner__img img');return !!(im&&im.complete&&im.naturalWidth>0);}
+function sprzataj(){if(koniec)return;koniec=true;d.classList.add('hero-go');d.classList.remove('intro-on','intro-gra','intro-out');
+['--i-w','--i-h','--i-px','--i-py','--i-s'].forEach(function(k){d.style.removeProperty(k);});
+try{document.dispatchEvent(new Event('wejscie:koniec'));}catch(e){}}
+function cel(){var c=document.querySelector('.nav .nav-inner .brand-logo'),l=document.querySelector('.wejscie-logo');if(!c||!l)return false;
+var r=c.getBoundingClientRect(),w=l.offsetWidth;if(!r.width||!w)return false;
+d.style.setProperty('--i-px',(r.left+r.width/2-window.innerWidth/2).toFixed(1)+'px');
+d.style.setProperty('--i-py',(r.top+r.height/2-window.innerHeight/2).toFixed(1)+'px');
+d.style.setProperty('--i-s',(r.width/w).toFixed(4));return true;}
+function wyjdz(){if(wyszlo||koniec)return;wyszlo=true;if(!cel()){sprzataj();return;}d.classList.add('intro-out');setTimeout(function(){d.classList.add('hero-go');},300);setTimeout(sprzataj,900);}
+function moze(){if(wyszlo||koniec)return;var t=Date.now()-t0;if(t>=1550&&(heroGotowe()||t>=2100))wyjdz();else setTimeout(moze,60);}
+try{var lg=document.querySelector('.wejscie-logo');if(!lg){sprzataj();return;}
+var W=window.innerWidth,szer=Math.round(W<680?Math.min(W*0.72,340):Math.min(W*0.38,560));
+d.style.setProperty('--i-w',szer+'px');d.style.setProperty('--i-h',Math.round(szer*164/1010)+'px');
+var start=function(){if(koniec||d.classList.contains('intro-gra'))return;requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('intro-gra');t0=Date.now();moze();});});};
+if(lg.complete&&lg.naturalWidth>0)start();else{lg.addEventListener('load',start);lg.addEventListener('error',sprzataj);setTimeout(start,700);}
+['wheel','touchstart','keydown','pointerdown'].forEach(function(ev){window.addEventListener(ev,function(){sprzataj();},{once:true,passive:true});});
+setTimeout(sprzataj,4200);
+}catch(e){sprzataj();}})();</script>
 
 <main>
 
@@ -149,6 +174,26 @@
   <div class="center mt-m reveal"><a class="btn" href="kontakt.html">Zamów kurs</a></div>
 </section>
 
+<section class="bg-ink pv kroki-sec">
+  <div class="wrap kroki-grid">
+    <div class="kroki-side">
+      <span class="sub reveal">Jak zamówić</span>
+      <h2 class="reveal">Od telefonu do kursu</h2>
+      <div class="kroki-count reveal" aria-hidden="true"><b>01</b><span>/ 04</span></div>
+      <p class="kroki-now reveal" aria-hidden="true">Dzwonisz</p>
+    </div>
+    <div class="kroki-lista">
+      <span class="drut" aria-hidden="true"><i></i></span>
+      <ol>
+        <li class="krok" data-nazwa="Dzwonisz"><span class="no">01</span><h3>Dzwonisz</h3><p>Od poniedziałku do piątku, 7:00-20:00. Wystarczy powiedzieć, czego potrzebujesz i&nbsp;pod jaki adres.</p></li>
+        <li class="krok" data-nazwa="Wycena"><span class="no">02</span><h3>Wycena</h3><p>Koszt poznajesz w&nbsp;tej samej rozmowie, jeszcze zanim wywrotka ruszy w&nbsp;drogę.</p></li>
+        <li class="krok" data-nazwa="Termin"><span class="no">03</span><h3>Termin</h3><p>Ustalamy dzień i&nbsp;godzinę tak, żeby pasowały do Twojej budowy.</p></li>
+        <li class="krok" data-nazwa="Wywrotka u Ciebie"><span class="no">04</span><h3>Wywrotka u&nbsp;Ciebie</h3><p>Zsypujemy ładunek dokładnie tam, gdzie pokażesz, albo zabieramy to, co ma zniknąć z&nbsp;działki.</p></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
 <section class="stopklatka" aria-hidden="true"><div class="stk-bg" style="background-image:url(img/g15.jpg)"></div></section>
 
 <section class="bg-ink pv zasady">
@@ -172,7 +217,7 @@
     </div>
   </div>
   <h2 class="huge huge--fit6 reveal">Opinie</h2>
-  <div class="wrap"><ul class="steps steps--promise"><li class="reveal"><span class="lab lab-serif">Ocena 5,0 w&nbsp;Google</span><span class="desc">Same piątki od klientów</span></li><li class="reveal"><span class="lab lab-serif">Dwie wywrotki Iveco</span><span class="desc">W&nbsp;tym Trakker 8x4 na duże ładunki</span></li><li class="reveal"><span class="lab lab-serif">Dojazd do 50&nbsp;km</span><span class="desc">Koluszki i&nbsp;okolice</span></li><li class="reveal"><span class="lab lab-serif">Pon.-pt. 7-20</span><span class="desc">Wtedy odbieramy telefon</span></li></ul></div>
+  <div class="wrap"><ul class="steps steps--promise fakty"><li class="reveal"><span class="fakt-n"><span class="licz" data-to="5,0">5,0</span></span><span class="lab">Ocena w&nbsp;Google</span><span class="desc">Same piątki od klientów</span></li><li class="reveal"><span class="fakt-n"><span class="licz" data-to="2">2</span></span><span class="lab">Wywrotki Iveco</span><span class="desc">W&nbsp;tym Trakker 8x4 na duże ładunki</span></li><li class="reveal"><span class="fakt-n"><span class="licz" data-to="50">50</span><small>km</small></span><span class="lab">Zasięg dojazdu</span><span class="desc">Koluszki i&nbsp;okolice</span></li><li class="reveal"><span class="fakt-n"><span class="licz" data-to="7">7</span>-<span class="licz" data-to="20">20</span></span><span class="lab">Pon.-pt.</span><span class="desc">Wtedy odbieramy telefon</span></li></ul></div>
 </section>
 
 <section class="bg-ink pv call cta">
@@ -220,6 +265,7 @@
 <div class="sticky-call"><a class="sc-call" href="tel:+48600439938"><svg class="ico-tel" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6.6 10.8a15.5 15.5 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.58 3.6a1 1 0 0 1-.25 1l-2.23 2.2Z" fill="currentColor"/></svg> Zadzwoń</a><a class="sc-quote" href="kontakt.html">Zamów kurs</a></div>
 <div class="demo-wazne" data-do="2026-11-11" data-cykl="3" hidden><svg class="dw-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.6" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.2V12l3.3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="dw-txt"></span></div>
 
-<script src="assets/main.js?v=20261105"></script>
+<script src="assets/lenis.min.js?v=1.1.20"></script>
+<script src="assets/main.js?v=20261110"></script>
 </body>
 </html>

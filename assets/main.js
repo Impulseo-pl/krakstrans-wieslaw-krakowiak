@@ -744,6 +744,7 @@
     btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     document.body.appendChild(btn);
     btn.addEventListener('click', function () {
+      if (window.__lenis) { window.__lenis.scrollTo(0, { duration: 1.4 }); return; }
       window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
     });
     var t = false;
@@ -772,6 +773,288 @@
     // po sekundzie i tak odsłaniamy treść — nikt nigdy nie zobaczy pustego hero.
     setTimeout(function () { bm.classList.add('bm-in'); }, 1000);
   });
+})();
+
+
+/* === KRAKSTRANS: funkcje strony (10.11.2026) ===
+   Mechanika przeniesiona z dema ElMac, wygląd strony bez zmian: płynne przewijanie,
+   kaskada tekstu w nagłówku (na głównej po ekranie wejścia), liczniki, kroki zapalane
+   przewijaniem, paralaksa zdjęć, płynne pytania, podgląd zdjęć w galerii, kotwice.
+   Każdy blok w osobnym try/catch: awaria jednego nie zatrzymuje reszty. Stany ukryte
+   włącza klasa `kr-anim` z <head>; bez potwierdzenia `kr-ok` po 3,5 s sama znika. */
+(function () {
+  var d = document.documentElement;
+  var RM = false;
+  try { RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { }
+  var NAV = function () { return parseInt(getComputedStyle(d).getPropertyValue('--nav-h'), 10) || 84; };
+  var lbOtwarty = false;
+
+  /* 1. Płynne przewijanie (Lenis) - tylko mysz/gładzik, telefon przewija natywnie */
+  var lenis = null;
+  try {
+    if (!RM && window.Lenis && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      lenis = new window.Lenis({
+        lerp: 0.085, wheelMultiplier: 0.95, smoothWheel: true,
+        /* gest w bok nad karuzelą zostaje dla karuzeli (inaczej gładzik by jej nie przesuwał) */
+        virtualScroll: function (v) {
+          try {
+            var t = v && v.event && v.event.target;
+            if (t && t.closest && t.closest('.rail-track') && Math.abs(v.deltaX) > Math.abs(v.deltaY)) return false;
+          } catch (e) { }
+          return true;
+        }
+      });
+      var raf = function (t) { lenis.raf(t); requestAnimationFrame(raf); };
+      requestAnimationFrame(raf);
+      if (d.classList.contains('intro-on')) {
+        lenis.stop();
+        document.addEventListener('wejscie:koniec', function () { if (!lbOtwarty && !d.classList.contains('menu-open')) lenis.start(); });
+      }
+      /* otwarte menu = strona pod spodem stoi */
+      var menuBylo = d.classList.contains('menu-open');
+      if (window.MutationObserver) {
+        new MutationObserver(function () {
+          var jest = d.classList.contains('menu-open');
+          if (jest === menuBylo) return;
+          menuBylo = jest;
+          if (jest) lenis.stop();
+          else if (!lbOtwarty && !d.classList.contains('intro-on')) lenis.start();
+        }).observe(d, { attributes: true, attributeFilter: ['class'] });
+      }
+    }
+  } catch (e) { lenis = null; }
+  window.__lenis = lenis;
+
+  var naScroll = [];
+  var tik = false;
+  var przelicz = function () { tik = false; for (var i = 0; i < naScroll.length; i++) { try { naScroll[i](); } catch (e) { } } };
+  var zglos = function () { if (!tik) { tik = true; requestAnimationFrame(przelicz); } };
+  window.addEventListener('scroll', zglos, { passive: true });
+  window.addEventListener('resize', zglos, { passive: true });
+  window.addEventListener('load', zglos);
+
+  /* 2. Tekst w nagłówku wchodzi kaskadą (na głównej dopiero po ekranie wejścia) */
+  try {
+    if (!d.classList.contains('intro-on')) {
+      requestAnimationFrame(function () { requestAnimationFrame(function () { d.classList.add('hero-go'); }); });
+    }
+    setTimeout(function () { d.classList.add('hero-go'); }, 4800);
+    /* nagłówek, którego warstwa ruchu nie podzieliła na linie, i tak ma się pokazać */
+    setTimeout(function () {
+      var h = document.querySelector('.banner h1');
+      if (h && !h.classList.contains('mt-lines') && !h.classList.contains('mt-fade')) h.classList.add('h1-wolny');
+    }, 2600);
+  } catch (e) { d.classList.add('hero-go'); }
+
+  /* 3. Liczniki */
+  try {
+    var liczby = [].slice.call(document.querySelectorAll('.licz[data-to]'));
+    var licz = function (el) {
+      if (el.__liczy) return; el.__liczy = true;
+      var surowe = el.getAttribute('data-to');
+      var cel = parseFloat(surowe.replace(',', '.'));
+      var miejsca = (surowe.split(',')[1] || '').length;
+      if (!isFinite(cel)) return;
+      var t0 = null, DUR = 1700;
+      var krok = function (t) {
+        if (!t0) t0 = t;
+        var p = Math.min(1, (t - t0) / DUR), e = 1 - Math.pow(2, -10 * p);
+        el.textContent = (cel * (p === 1 ? 1 : e)).toFixed(miejsca).replace('.', ',');
+        if (p < 1) requestAnimationFrame(krok);
+      };
+      el.textContent = (0).toFixed(miejsca).replace('.', ',');
+      requestAnimationFrame(krok);
+    };
+    if (liczby.length && 'IntersectionObserver' in window && !RM) {
+      var io2 = new IntersectionObserver(function (wp) {
+        wp.forEach(function (w) { if (w.isIntersecting) { licz(w.target); io2.unobserve(w.target); } });
+      }, { threshold: 0.6 });
+      liczby.forEach(function (el) { io2.observe(el); });
+    }
+  } catch (e) { }
+
+  /* 4. Kroki: linia wypełnia się przy przewijaniu i zapala kolejne etapy */
+  try {
+    var lista = document.querySelector('.kroki-lista');
+    if (lista) {
+      d.classList.add('kroki-js');
+      var drut = lista.querySelector('.drut');
+      var kroki = [].slice.call(lista.querySelectorAll('.krok'));
+      var licznik = document.querySelector('.kroki-count b');
+      var teraz = document.querySelector('.kroki-now');
+      naScroll.push(function () {
+        var r = lista.getBoundingClientRect(), h = window.innerHeight, linia = h * 0.58;
+        var p = Math.max(0, Math.min(1, (linia - r.top - 12) / Math.max(1, r.height - 40)));
+        if (drut) drut.style.setProperty('--p', p.toFixed(4));
+        var akt = 0;
+        kroki.forEach(function (s, i) {
+          var on = s.getBoundingClientRect().top + 14 < linia;
+          s.classList.toggle('is-live', on || i === 0);
+          if (on) akt = i;
+        });
+        if (licznik) licznik.textContent = ('0' + (akt + 1)).slice(-2);
+        if (teraz && kroki[akt]) teraz.textContent = kroki[akt].getAttribute('data-nazwa') || '';
+      });
+    }
+    /* rząd kroków (podstrona „O nas”): etapy zapalają się po kolei, gdy rząd mija ekran */
+    [].slice.call(document.querySelectorAll('[data-rzad]')).forEach(function (rzad) {
+      var el = [].slice.call(rzad.children);
+      if (el.length < 2) return;
+      rzad.classList.add('rzad-js');
+      naScroll.push(function () {
+        var r = rzad.getBoundingClientRect(), h = window.innerHeight;
+        var p = Math.max(0, Math.min(1, (h * 0.86 - r.top) / (h * 0.42)));
+        var ile = Math.ceil(p * el.length - 0.001);
+        el.forEach(function (li, i) { li.classList.toggle('is-live', i < ile); });
+        rzad.style.setProperty('--p', (ile / el.length).toFixed(3));
+      });
+    });
+  } catch (e) { d.classList.remove('kroki-js'); }
+
+  /* 5. Paralaksa zdjęć wewnątrz ramek (tylko duży ekran) */
+  try {
+    if (!RM && window.matchMedia('(min-width: 900px)').matches) {
+      var plx = [].slice.call(document.querySelectorAll('.duo__item figure img, .project img, .svc-row figure img, .split figure img'));
+      plx.forEach(function (el) { el.classList.add('kr-plx'); });
+      naScroll.push(function () {
+        var h = window.innerHeight;
+        plx.forEach(function (el) {
+          var ramka = el.parentElement.getBoundingClientRect();
+          if (ramka.bottom < -120 || ramka.top > h + 120) return;
+          var k = Math.min(44, ramka.height * 0.05);
+          var p = (ramka.top + ramka.height / 2 - h / 2) / (h / 2 + ramka.height / 2);
+          el.style.translate = '0 ' + (p * -k).toFixed(1) + 'px';
+        });
+      });
+    }
+  } catch (e) { }
+
+  /* 6. Pytania: płynne rozwijanie */
+  try {
+    [].slice.call(document.querySelectorAll('details.qa')).forEach(function (det) {
+      var sum = det.querySelector('summary');
+      if (!sum || !det.animate || RM) return;
+      sum.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (det.__anim) det.__anim.cancel();
+        var start = det.offsetHeight, koniec;
+        det.style.overflow = 'hidden';
+        if (!det.open) {
+          det.open = true;
+          koniec = det.offsetHeight;
+        } else {
+          koniec = sum.offsetHeight + (det.offsetHeight - det.clientHeight);
+          det.classList.add('zamyka');
+        }
+        det.__anim = det.animate({ height: [start + 'px', koniec + 'px'] }, { duration: 560, easing: 'cubic-bezier(.16,1,.3,1)' });
+        det.__anim.onfinish = function () {
+          if (det.classList.contains('zamyka')) { det.open = false; det.classList.remove('zamyka'); }
+          det.style.overflow = ''; det.__anim = null;
+        };
+        det.__anim.oncancel = function () { det.classList.remove('zamyka'); };
+      });
+    });
+  } catch (e) { }
+
+  /* 7. Podgląd zdjęć w galerii (klik, strzałki, Esc, przesunięcie palcem) */
+  try {
+    var kafle = [].slice.call(document.querySelectorAll('.masonry .tile'));
+    if (kafle.length) {
+      var lb = document.createElement('div');
+      lb.className = 'lb'; lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true');
+      lb.setAttribute('aria-label', 'Podgląd zdjęcia'); lb.setAttribute('data-lenis-prevent', '');
+      lb.innerHTML = '<span class="lb-nr" aria-hidden="true"></span><figure><img alt=""><figcaption></figcaption></figure>' +
+        '<button class="lb-btn lb-x" type="button" aria-label="Zamknij podgląd"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>' +
+        '<button class="lb-btn lb-prev" type="button" aria-label="Poprzednie zdjęcie">←</button>' +
+        '<button class="lb-btn lb-next" type="button" aria-label="Następne zdjęcie">→</button>';
+      document.body.appendChild(lb);
+      var lbImg = lb.querySelector('img'), lbCap = lb.querySelector('figcaption'), lbNr = lb.querySelector('.lb-nr'), idx = 0, wrocDo = null;
+      var dwa = function (n) { return (n < 10 ? '0' : '') + n; };
+      var pokaz = function (i) {
+        idx = (i + kafle.length) % kafle.length;
+        var im = kafle[idx].querySelector('img'), cap = kafle[idx].querySelector('.cap');
+        if (!im) return;
+        lbImg.src = im.currentSrc || im.src; lbImg.alt = im.alt || '';
+        lbCap.textContent = cap ? cap.textContent : (im.alt || '');
+        lbNr.textContent = dwa(idx + 1) + ' / ' + dwa(kafle.length);
+      };
+      var otworz = function (i) {
+        wrocDo = kafle[i]; pokaz(i); lb.classList.add('is-open'); lbOtwarty = true;
+        if (lenis) lenis.stop();
+        try { lb.querySelector('.lb-x').focus({ preventScroll: true }); } catch (e) { }
+      };
+      var zamknijLb = function () {
+        lb.classList.remove('is-open'); lbOtwarty = false;
+        if (lenis) lenis.start();
+        try { if (wrocDo) wrocDo.focus({ preventScroll: true }); } catch (e) { }
+      };
+      kafle.forEach(function (k, i) {
+        var cap = k.querySelector('.cap');
+        k.setAttribute('data-lb', ''); k.setAttribute('tabindex', '0'); k.setAttribute('role', 'button');
+        k.setAttribute('aria-label', 'Powiększ zdjęcie' + (cap ? ': ' + cap.textContent : ''));
+        k.addEventListener('click', function (e) { e.preventDefault(); otworz(i); });
+        k.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); otworz(i); } });
+      });
+      lb.querySelector('.lb-x').addEventListener('click', zamknijLb);
+      lb.querySelector('.lb-prev').addEventListener('click', function () { pokaz(idx - 1); });
+      lb.querySelector('.lb-next').addEventListener('click', function () { pokaz(idx + 1); });
+      lb.addEventListener('click', function (e) { if (e.target === lb) zamknijLb(); });
+      document.addEventListener('keydown', function (e) {
+        if (!lb.classList.contains('is-open')) return;
+        if (e.key === 'Escape') zamknijLb();
+        if (e.key === 'ArrowLeft') pokaz(idx - 1);
+        if (e.key === 'ArrowRight') pokaz(idx + 1);
+      });
+      var x0 = null;
+      lb.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+      lb.addEventListener('touchend', function (e) {
+        if (x0 === null) return;
+        var dx = e.changedTouches[0].clientX - x0; x0 = null;
+        if (Math.abs(dx) > 48) pokaz(idx + (dx < 0 ? 1 : -1));
+      }, { passive: true });
+    }
+  } catch (e) { }
+
+  /* 8. Kotwice na tej samej stronie - płynnie, z miejscem na pasek */
+  try {
+    var sciezka = function (p) { return String(p || '').replace(/index\.html$/, ''); };
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest ? e.target.closest('a[href*="#"]') : null;
+      if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || a.target) return;
+      if (a.host !== location.host || sciezka(a.pathname) !== sciezka(location.pathname)) return;
+      if (!a.hash || a.hash.length < 2) return;
+      var cel = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+      if (!cel) return;
+      e.preventDefault();
+      if (lenis) {
+        /* menu zamyka się tym samym klikiem - ruszamy, gdy strona już nie stoi */
+        setTimeout(function () { lenis.start(); lenis.scrollTo(cel, { offset: -NAV() - 12, duration: 1.4 }); }, 30);
+      } else {
+        cel.scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'start' });
+      }
+      try { history.replaceState(null, '', a.hash); } catch (er) { }
+    });
+  } catch (e) { }
+
+  /* 9. Wyjście ze strony: przeglądarki bez przejść widoku dostają krótkie wygaszenie */
+  try {
+    if (!RM && !('CSSViewTransitionRule' in window)) {
+      document.addEventListener('click', function (e) {
+        var a = e.target.closest ? e.target.closest('a') : null;
+        if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        var href = a.getAttribute('href') || '';
+        if (a.target || a.hasAttribute('download') || /^(#|tel:|mailto:|https?:|\/\/)/i.test(href)) return;
+        if (a.pathname === location.pathname && a.hash) return;
+        e.preventDefault();
+        d.classList.add('pt-leave');
+        setTimeout(function () { location.href = a.href; }, 300);
+      });
+      window.addEventListener('pageshow', function (ev) { if (ev.persisted) d.classList.remove('pt-leave'); });
+    }
+  } catch (e) { }
+
+  przelicz();
+  d.classList.add('kr-ok');
 })();
 
 
